@@ -413,13 +413,13 @@ ${info}`.trim();
 
             const message = generateOrderSummary();
             setLastOrderDetails(message);
-            const messengerUrl = `https://m.me/61573331845595?text=${encodeURIComponent(message)}`;
+            const facebookUrl = `https://www.facebook.com/profile.php?id=61573331845595&_rdc=1&_rdr#`;
 
             setOrderSuccess(true);
             setCartItems([]);
             setHasCopied(false); // Reset for next order
 
-            window.open(messengerUrl, '_blank');
+            window.open(facebookUrl, '_blank');
         } catch (err) {
             console.error('Order process error:', err);
             alert('Something went wrong. Please try again.');
@@ -702,15 +702,15 @@ ${info}`.trim();
                             <div style={{ textAlign: 'center', padding: '40px 0' }}>
                                 <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🎉</div>
                                 <h2 style={{ color: 'var(--primary)', marginBottom: '10px' }}>Order Placed!</h2>
-                                <p style={{ color: 'var(--text-muted)', marginBottom: '30px' }}>Your order has been recorded. Click the button below to confirm it via Messenger if the chat didn't open automatically.</p>
+                                <p style={{ color: 'var(--text-muted)', marginBottom: '30px' }}>Your order has been recorded. Click the button below to visit our Facebook Page and send us your copied details.</p>
                                 <button
                                     className="btn-accent"
                                     onClick={() => {
-                                        window.open(`https://m.me/61573331845595?text=${encodeURIComponent(lastOrderDetails)}`, '_blank');
+                                        window.open('https://www.facebook.com/profile.php?id=61573331845595&_rdc=1&_rdr#', '_blank');
                                     }}
                                     style={{ width: '100%', padding: '15px', borderRadius: '12px', fontWeight: 800, marginBottom: '12px' }}
                                 >
-                                    Open Designer Chat
+                                    Visit Facebook Page
                                 </button>
                                 <button
                                     onClick={() => {
