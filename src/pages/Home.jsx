@@ -84,7 +84,7 @@ const MenuItem = React.memo(({ item, isOpen, openProductSelection }) => (
                     className="btn-primary"
                     disabled={item.out_of_stock || !isOpen}
                     onClick={() => openProductSelection(item)}
-                    style={{ padding: '8px 16px', fontSize: '0.8rem', opacity: (item.out_of_stock || !isOpen) ? 0.5 : 1 }}
+                    style={{ padding: '6px 12px', fontSize: '0.75rem', opacity: (item.out_of_stock || !isOpen) ? 0.5 : 1 }}
                 >
                     <Plus size={14} style={{ marginRight: '5px' }} /> Add to Cart
                 </button>
@@ -119,16 +119,16 @@ const Home = () => {
     const [storeSettings, setStoreSettings] = useState(() => {
         const fallback = {
             manual_status: 'auto',
-            open_time: '10:00',
-            close_time: '01:00',
-            store_name: 'Fiesta Kainan sa Cubao',
-            address: 'Food Court, Farmers Plaza, General Araneta, Cubao, Quezon City',
-            contact: '0922 811 2858',
+            open_time: '08:00',
+            close_time: '20:00',
+            store_name: 'Beacon Bites',
+            address: 'Cubao, Quezon City',
+            contact: '09XX XXX XXXX',
             logo_url: '/logo.png',
             banner_images: [
-                'https://images.unsplash.com/photo-1517701604599-bb29b565094d?auto=format&fit=crop&w=1200&q=80',
-                'https://images.unsplash.com/photo-1541167760496-162955ed8a9f?auto=format&fit=crop&w=1200&q=80',
-                'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1200&q=80'
+                'https://images.unsplash.com/photo-1517433367423-c7e5b0f35086?auto=format&fit=crop&w=1200&q=80',
+                'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80',
+                'https://images.unsplash.com/photo-1486427944299-d1955d23e34d?auto=format&fit=crop&w=1200&q=80'
             ]
         };
         const saved = getLocalData('storeSettings', fallback);
@@ -454,15 +454,18 @@ ${info}`.trim();
             <header className="app-header">
                 <div className="container header-container">
                     <Link to="/" className="brand">
-                        <img src={storeSettings.logo_url || "/logo.png"} alt="Fiesta Kainan sa Cubao Logo" style={{ height: '50px' }} />
+                        <img src={storeSettings.logo_url || "/logo.png"} alt={`${storeSettings.store_name} Logo`} style={{ height: '50px', objectFit: 'contain' }} />
+                        <div className="brand-text">
+                            <span className="brand-name">Beacon Bites</span>
+                        </div>
                     </Link>
 
                     <nav className="header-nav" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                        <Link to="/" className="nav-link">Home</Link>
-                        <Link to="/contact" className="nav-link">Contact</Link>
-                        <button className="btn-accent" onClick={() => setIsCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '10px' }}>
-                            <ShoppingBag size={18} />
-                            <span>Cart ({cartCount})</span>
+
+                        <Link to="/contact" className="btn-primary" style={{ background: '#22c55e', color: 'white', padding: '6px 16px', fontSize: '0.85rem', textDecoration: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Contact</Link>
+                        <button className="btn-accent" onClick={() => setIsCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '8px', padding: '6px 12px', fontSize: '0.85rem' }}>
+                            <ShoppingBag size={16} />
+                            <span>({cartCount})</span>
                         </button>
                     </nav>
                 </div>
@@ -492,8 +495,8 @@ ${info}`.trim();
             <section className="hero-section">
                 <div className="container hero-split">
                     <div className="hero-content">
-                        <h1>Fiesta Kainan <span style={{ color: 'var(--accent)' }}>sa Cubao</span></h1>
-                        <p>Specializing in <strong>Packed Meals</strong>, <strong>Party Trays</strong>, and <strong>Special Fried Rice</strong>. Experience the authentic taste of a Filipino fiesta in every bite!</p>
+                        <h1>{storeSettings.hero_title || 'Beacon Bites'}</h1>
+                        <p>{storeSettings.hero_subtitle || 'Baked with Love, Delivered with Joy. Discover our signature Pastries, Cakes, and Artisan Breads. Freshly baked and ready for your enjoyment!'}</p>
                     </div>
                     <div className="hero-image-container">
                         {(storeSettings.banner_images || []).map((url, i) => (
@@ -674,7 +677,7 @@ ${info}`.trim();
                             </div>
                         )}
 
-                        <button className="btn-primary" style={{ width: '100%', padding: '15px', fontWeight: 700, fontSize: '1.1rem' }} onClick={() => addToCart(selectedProduct, selectionOptions)}>
+                        <button className="btn-primary" style={{ width: '100%', padding: '12px', fontWeight: 700, fontSize: '1rem' }} onClick={() => addToCart(selectedProduct, selectionOptions)}>
                             Add to Cart - ₱{(
                                 (selectionOptions.variation && Number(selectionOptions.variation.price) > 0)
                                     ? (selectedProduct.name?.toLowerCase().includes('pork ribs')

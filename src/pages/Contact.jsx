@@ -5,11 +5,11 @@ import { supabase } from '../supabaseClient';
 
 const Contact = () => {
     const [storeSettings, setStoreSettings] = useState({
-        store_name: 'Fiesta Kainan sa Cubao',
-        address: 'Food Court, Farmers Plaza, General Araneta, Cubao, Quezon City',
-        contact: '0922 811 2858',
-        open_time: '10:00',
-        close_time: '21:00',
+        store_name: 'Beacon Bites',
+        address: 'Cubao, Quezon City',
+        contact: '09XX XXX XXXX',
+        open_time: '08:00',
+        close_time: '20:00',
         logo_url: '/logo.png'
     });
 
@@ -35,19 +35,22 @@ const Contact = () => {
             <header className="app-header">
                 <div className="container header-container">
                     <Link to="/" className="brand">
-                        <img src={storeSettings.logo_url || "/logo.png"} alt="Fiesta Kainan sa Cubao Logo" style={{ height: '50px' }} />
+                        <img src={storeSettings.logo_url || "/logo.png"} alt={`${storeSettings.store_name} Logo`} style={{ height: '50px', objectFit: 'contain' }} />
+                        <div className="brand-text">
+                            <span className="brand-name">Beacon Bites</span>
+                        </div>
                     </Link>
                     <nav className="header-nav" style={{ display: 'flex', gap: '20px' }}>
-                        <Link to="/" className="nav-link">Home</Link>
-                        <Link to="/contact" className="nav-link active">Contact</Link>
+
+                        <Link to="/contact" className="btn-primary" style={{ background: '#22c55e', color: 'white', padding: '6px 16px', fontSize: '0.85rem', textDecoration: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Contact</Link>
                     </nav>
                 </div>
             </header>
 
             <main className="container" style={{ padding: '80px 0' }}>
                 <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-                    <h1 style={{ fontSize: '3.5rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '15px' }}>Visit <span style={{ color: 'var(--accent)' }}>Us</span></h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>We'd love to serve you the best Filipino fiesta food in town!</p>
+                    <h1 style={{ fontSize: '3.5rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '15px' }}>Get in <span style={{ color: 'var(--accent)' }}>Touch</span></h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>We'd love to hear from you! Order your favorite treats today.</p>
                 </div>
 
                 <div className="contact-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', marginBottom: '60px' }}>

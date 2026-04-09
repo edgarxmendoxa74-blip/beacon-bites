@@ -1,4 +1,4 @@
--- Supabase Schema for Fiesta Kainan sa Cubao
+-- Supabase Schema for Beacon Bites
 -- This script is idempotent (safe to run multiple times)
 
 -- Enable UUID extension
@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- 1. Store Settings Table
 CREATE TABLE IF NOT EXISTS store_settings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    store_name TEXT NOT NULL DEFAULT 'Fiesta Kainan sa Cubao',
+    store_name TEXT NOT NULL DEFAULT 'Beacon Bites',
     address TEXT,
     contact TEXT,
     logo_url TEXT,
@@ -76,4 +76,4 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 -- Initial Data (Optional)
--- INSERT INTO store_settings (store_name, contact) VALUES ('Fiesta Kainan sa Cubao', '09563713967');
+-- INSERT INTO store_settings (store_name, contact) VALUES ('Beacon Bites', '09563713967');

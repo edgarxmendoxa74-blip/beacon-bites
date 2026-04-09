@@ -1,6 +1,6 @@
-# Fiesta Kainan sa Cubao
+# Beacon Bites
 
-A premium web application for Fiesta Kainan sa Cubao, specializing in authentic Filipino dining and a vibrant community experience.
+A premium web application for Beacon Bites, specializing in authentic Filipino dining and a vibrant community experience.
 
 ## Features
 - **Dynamic Menu**: Real-time menu management with categories, variations, and add-ons.

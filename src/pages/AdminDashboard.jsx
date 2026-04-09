@@ -567,7 +567,6 @@ const AdminDashboard = () => {
         const [localTypes, setLocalTypes] = useState([]);
 
         useEffect(() => {
-            // Merge fixed types with db state
             const merged = FIXED_TYPES.map(ft => {
                 const existing = orderTypes.find(t => t.id === ft.id);
                 return existing ? existing : { ...ft, is_active: ft.defaultActive };
@@ -577,23 +576,19 @@ const AdminDashboard = () => {
 
         const toggleType = async (type) => {
             const newStatus = !type.is_active;
-
-            // Optimistic update
-            const updated = localTypes.map(t => t.id === type.id ? { ...t, is_active: newStatus, name: type.name } : t);
+            const updated = localTypes.map(t => t.id === type.id ? { ...t, is_active: newStatus } : t);
             setLocalTypes(updated);
             setOrderTypes(updated);
 
-            // Update DB
             const { error } = await supabase.from('order_types').upsert({
                 id: type.id,
-                name: type.name, // Ensure name is saved (e.g. "Take Out")
+                name: type.name,
                 is_active: newStatus
             });
 
             if (error) {
                 console.error(error);
                 showMessage(`Error updating: ${error.message}`);
-                // Revert on error would go here
             } else {
                 showMessage(`${type.name} is now ${newStatus ? 'Active' : 'Inactive'}`);
             }
@@ -603,46 +598,24 @@ const AdminDashboard = () => {
             <div className="admin-card" style={{ background: 'white', padding: '30px', borderRadius: '24px' }}>
                 <h2 style={{ marginBottom: '10px' }}>Order Types Management</h2>
                 <p style={{ color: 'var(--text-muted)', marginBottom: '30px' }}>Manage the availability of service options.</p>
-
                 <div style={{ display: 'grid', gap: '15px' }}>
                     {localTypes.map(t => (
                         <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: '#f8fafc', borderRadius: '15px', border: '1px solid #e2e8f0' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                <div style={{
-                                    width: '40px', height: '40px', borderRadius: '10px',
-                                    background: t.is_active ? 'var(--primary)' : '#cbd5e1',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    color: 'white'
-                                }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: t.is_active ? 'var(--primary)' : '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                                     {t.id === 'dine-in' && <Utensils size={20} />}
                                     {t.id === 'pickup' && <ShoppingBag size={20} />}
                                     {t.id === 'delivery' && <Truck size={20} />}
                                 </div>
                                 <div>
                                     <span style={{ fontWeight: 700, fontSize: '1.1rem', display: 'block' }}>{t.name}</span>
-                                    <span style={{ fontSize: '0.85rem', color: t.is_active ? '#166534' : 'var(--text-muted)' }}>
-                                        {t.is_active ? 'Currently Available' : 'Unavailable'}
-                                    </span>
+                                    <span style={{ fontSize: '0.85rem', color: t.is_active ? '#166534' : 'var(--text-muted)' }}>{t.is_active ? 'Currently Available' : 'Unavailable'}</span>
                                 </div>
                             </div>
-
                             <label style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px', cursor: 'pointer' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={t.is_active !== false}
-                                    onChange={() => toggleType(t)}
-                                    style={{ opacity: 0, width: 0, height: 0 }}
-                                />
-                                <span style={{
-                                    position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                                    backgroundColor: t.is_active ? 'var(--primary)' : '#ccc',
-                                    transition: '.4s', borderRadius: '34px'
-                                }}></span>
-                                <span style={{
-                                    position: 'absolute', content: '""', height: '20px', width: '20px', left: '3px', bottom: '3px',
-                                    backgroundColor: 'white', transition: '.4s', borderRadius: '50%',
-                                    transform: t.is_active ? 'translateX(24px)' : 'translateX(0)'
-                                }}></span>
+                                <input type="checkbox" checked={t.is_active} onChange={() => toggleType(t)} style={{ opacity: 0, width: 0, height: 0 }} />
+                                <span style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: t.is_active ? 'var(--primary)' : '#ccc', transition: '.4s', borderRadius: '34px' }}></span>
+                                <span style={{ position: 'absolute', height: '20px', width: '20px', left: '3px', bottom: '3px', backgroundColor: 'white', transition: '.4s', borderRadius: '50%', transform: t.is_active ? 'translateX(24px)' : 'translateX(0)' }}></span>
                             </label>
                         </div>
                     ))}
@@ -870,13 +843,13 @@ const AdminDashboard = () => {
 
                 {/* Stats Summary */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '40px' }}>
-                    <div style={{ background: '#eff6ff', padding: '20px', borderRadius: '15px', border: '1px solid #dbeafe' }}>
-                        <div style={{ color: '#1e40af', fontSize: '0.9rem', fontWeight: 600 }}>Total Orders</div>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1e3a8a' }}>{stats.totalOrders}</div>
+                    <div style={{ background: '#fdf4ff', padding: '20px', borderRadius: '15px', border: '1px solid #f5d0fe' }}>
+                        <div style={{ color: '#701a75', fontSize: '0.9rem', fontWeight: 600 }}>Total Orders</div>
+                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#4a044e' }}>{stats.totalOrders}</div>
                     </div>
-                    <div style={{ background: '#f0fdf4', padding: '20px', borderRadius: '15px', border: '1px solid #dcfce7' }}>
-                        <div style={{ color: '#166534', fontSize: '0.9rem', fontWeight: 600 }}>Total Sales</div>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#14532d' }}>₱{stats.totalSales}</div>
+                    <div style={{ background: '#fefce8', padding: '20px', borderRadius: '15px', border: '1px solid #fef08a' }}>
+                        <div style={{ color: '#854d0e', fontSize: '0.9rem', fontWeight: 600 }}>Total Sales</div>
+                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#713f12' }}>₱{stats.totalSales}</div>
                     </div>
                     <div style={{ background: '#fff7ed', padding: '20px', borderRadius: '15px', border: '1px solid #ffedd5' }}>
                         <div style={{ color: '#9a3412', fontSize: '0.9rem', fontWeight: 600 }}>Pending Orders</div>
@@ -953,12 +926,18 @@ const AdminDashboard = () => {
 
     // --- MAIN RENDER ---
     return (
-        <div className="admin-layout" style={{ display: 'flex', minHeight: '100vh', background: '#f1f5f9', fontFamily: 'Inter' }}>
+        <div className="admin-layout" style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: 'Inter' }}>
             {/* Sidebar */}
-            <aside style={{ width: '260px', background: 'var(--primary)', color: 'white', padding: '30px 20px', position: 'fixed', height: '100vh' }}>
+            <aside style={{ width: '260px', background: '#5d4037', color: 'white', padding: '30px 20px', position: 'fixed', height: '100vh', boxShadow: '4px 0 10px rgba(0,0,0,0.05)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '50px', paddingLeft: '10px' }}>
-                    <Package size={28} color="var(--accent)" />
-                    <span style={{ fontSize: '1.4rem', fontWeight: 700, fontFamily: 'Playfair Display' }}>Fiesta Kainan sa Cubao</span>
+                    <div style={{ background: 'white', width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                        {storeSettings.logo_url ? (
+                            <img src={storeSettings.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        ) : (
+                            <Package size={24} color="var(--primary)" />
+                        )}
+                    </div>
+                    <span style={{ fontSize: '1.4rem', fontWeight: 700, fontFamily: 'Playfair Display' }}>Beacon Bites</span>
                 </div>
 
                 <nav style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
@@ -1036,7 +1015,9 @@ const StoreGeneralSettings = ({ storeSettings, setStoreSettings, showMessage, co
             contact: formData.get('contact'),
             open_time: formData.get('openTime'),
             close_time: formData.get('closeTime'),
-            manual_status: formData.get('manualStatus')
+            manual_status: formData.get('manualStatus'),
+            hero_title: formData.get('heroTitle'),
+            hero_subtitle: formData.get('heroSubtitle')
         };
 
         const payload = storeSettings.id ? { id: storeSettings.id, ...updateData } : updateData;
@@ -1159,7 +1140,7 @@ const StoreGeneralSettings = ({ storeSettings, setStoreSettings, showMessage, co
             <form onSubmit={handleSave}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
                     <div>
-                        <h3 style={{ fontSize: '1.1rem', marginBottom: '20px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <h3 style={{ fontSize: '1.1rem', marginBottom: '20px', color: '#5d4037', display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <Clock size={20} /> Store Availability
                         </h3>
                         <div style={{ display: 'grid', gap: '15px' }}>
@@ -1185,18 +1166,20 @@ const StoreGeneralSettings = ({ storeSettings, setStoreSettings, showMessage, co
                     </div>
 
                     <div>
-                        <h3 style={{ fontSize: '1.1rem', marginBottom: '20px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <h3 style={{ fontSize: '1.1rem', marginBottom: '20px', color: '#5d4037', display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <FileText size={20} /> Store Information
                         </h3>
                         <div style={{ display: 'grid', gap: '15px' }}>
                             <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 600 }}>Store Name</label><input name="storeName" defaultValue={storeSettings.store_name} style={inputStyle} /></div>
+                            <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 600 }}>Hero Title</label><input name="heroTitle" defaultValue={storeSettings.hero_title || 'Beacon Bites'} style={inputStyle} /></div>
+                            <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 600 }}>Hero Subtitle</label><input name="heroSubtitle" defaultValue={storeSettings.hero_subtitle || 'Sweet treats for your precious moments.'} style={inputStyle} /></div>
                             <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 600 }}>Address</label><input name="address" defaultValue={storeSettings.address} style={inputStyle} /></div>
                             <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 600 }}>Contact Number</label><input name="contact" defaultValue={storeSettings.contact} style={inputStyle} /></div>
                         </div>
                     </div>
 
                     <div>
-                        <h3 style={{ fontSize: '1.1rem', marginBottom: '20px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <h3 style={{ fontSize: '1.1rem', marginBottom: '20px', color: '#5d4037', display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <Camera size={20} /> Store Logo
                         </h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -1206,7 +1189,7 @@ const StoreGeneralSettings = ({ storeSettings, setStoreSettings, showMessage, co
                     </div>
 
                     <div style={{ gridColumn: '1 / -1' }}>
-                        <h3 style={{ fontSize: '1.1rem', marginBottom: '20px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <h3 style={{ fontSize: '1.1rem', marginBottom: '20px', color: '#5d4037', display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <ImageIcon size={20} /> Hero Slideshow Banners
                         </h3>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
@@ -1245,10 +1228,10 @@ const StoreGeneralSettings = ({ storeSettings, setStoreSettings, showMessage, co
                             ))}
                             <label style={{
                                 height: '140px',
-                                border: '3px dashed var(--primary)',
+                                border: '3px dashed #5d4037',
                                 borderRadius: '16px',
-                                background: isUploading ? '#f1f5f9' : '#fff5f5',
-                                color: 'var(--primary)',
+                                background: isUploading ? '#f1f5f9' : '#fff9f0',
+                                color: '#5d4037',
                                 cursor: isUploading ? 'not-allowed' : 'pointer',
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -1287,9 +1270,9 @@ const StoreGeneralSettings = ({ storeSettings, setStoreSettings, showMessage, co
 const SidebarItem = ({ icon, label, active, onClick }) => (
     <button onClick={onClick} style={{
         display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 15px',
-        background: active ? 'var(--accent)' : 'transparent',
-        color: active ? 'var(--primary)' : 'rgba(255,255,255,0.7)',
-        border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 600,
+        background: active ? '#ffc62d' : 'transparent',
+        color: active ? '#5d4037' : 'rgba(255,255,255,0.7)',
+        border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 700,
         textAlign: 'left', width: '100%', transition: 'all 0.2s'
     }}>
         {icon} {label}
@@ -1299,7 +1282,7 @@ const SidebarItem = ({ icon, label, active, onClick }) => (
 const SectionLabel = ({ title, onAdd }) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', marginBottom: '10px', paddingBottom: '5px', borderBottom: '1px solid #eee' }}>
         <label style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{title}</label>
-        <button type="button" onClick={onAdd} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>+ Add</button>
+        <button type="button" onClick={onAdd} style={{ color: '#5d4037', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}>+ Add</button>
     </div>
 );
 
