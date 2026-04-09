@@ -413,7 +413,7 @@ ${info}`.trim();
 
             const message = generateOrderSummary();
             setLastOrderDetails(message);
-            const messengerUrl = `https://m.me/61579032505526?text=${encodeURIComponent(message)}`;
+            const messengerUrl = `https://m.me/61573331845595?text=${encodeURIComponent(message)}`;
 
             setOrderSuccess(true);
             setCartItems([]);
@@ -686,7 +686,7 @@ ${info}`.trim();
                                         ? Number(selectedProduct.promo_price || selectedProduct.price) + Number(selectionOptions.variation.price)
                                         : Number(selectionOptions.variation.price))
                                     : Number(selectedProduct.promo_price || selectedProduct.price)
-                            ) + selectionOptions.addons.reduce((sum, a) => sum + Number(a.price), 0)}
+                            ) + (selectionOptions.addons || []).reduce((sum, a) => sum + Number(a.price), 0)}
                         </button>
                     </div>
                 </div>
@@ -706,7 +706,7 @@ ${info}`.trim();
                                 <button
                                     className="btn-accent"
                                     onClick={() => {
-                                        window.open(`https://m.me/61579032505526?text=${encodeURIComponent(lastOrderDetails)}`, '_blank');
+                                        window.open(`https://m.me/61573331845595?text=${encodeURIComponent(lastOrderDetails)}`, '_blank');
                                     }}
                                     style={{ width: '100%', padding: '15px', borderRadius: '12px', fontWeight: 800, marginBottom: '12px' }}
                                 >
