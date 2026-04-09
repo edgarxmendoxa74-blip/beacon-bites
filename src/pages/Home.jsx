@@ -117,7 +117,6 @@ const Home = () => {
     const [items, setItems] = useState(() => normalizeItems(getLocalData('menuItems', initialMenuItems)));
     const [isLoading, setIsLoading] = useState(items.length === 0);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [orderSuccess, setOrderSuccess] = useState(false);
     const [activeCategory, setActiveCategory] = useState(() => categories[0]?.id || '');
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -375,7 +374,6 @@ ${info}`.trim();
         }
 
         const { name, phone, table_number, address, pickup_time } = customerDetails;
-        const typeName = getOrderType(orderType).toLowerCase();
 
         if (isDineInType(orderType) && (!name || !table_number)) { alert('Please provide your Name and Table Number.'); return; }
         if (isPickupType(orderType) && (!name || !phone || !pickup_time)) { alert('Please provide Name, Phone Number, and Pickup Time.'); return; }
