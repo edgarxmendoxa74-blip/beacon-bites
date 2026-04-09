@@ -1,4 +1,4 @@
--- Supabase Schema for Beacon Bites
+-- Supabase Schema for Fiesta Kainan sa Cubao
 -- This script is idempotent (safe to run multiple times)
 
 -- Enable UUID extension
@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS store_settings (
     open_time TIME DEFAULT '16:00',
     close_time TIME DEFAULT '01:00',
     manual_status TEXT DEFAULT 'auto',
+    hero_title TEXT DEFAULT 'Beacon Bites',
+    hero_subtitle TEXT DEFAULT 'Sweet treats for your precious moments.',
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -76,4 +78,4 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 -- Initial Data (Optional)
--- INSERT INTO store_settings (store_name, contact) VALUES ('Beacon Bites', '09563713967');
+-- INSERT INTO store_settings (store_name, contact) VALUES ('Fiesta Kainan sa Cubao', '09563713967');

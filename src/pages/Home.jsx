@@ -95,25 +95,37 @@ const MenuItem = React.memo(({ item, isOpen, openProductSelection }) => (
 
 const Home = () => {
     const [cartItems, setCartItems] = useState([]);
+    const [orderType, setOrderType] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState('');
+    const [customerDetails, setCustomerDetails] = useState({
+        name: '',
+        phone: '',
+        table_number: '',
+        address: '',
+        landmark: '',
+        pickup_time: ''
+    });
+    const [lastOrderDetails, setLastOrderDetails] = useState('');
+    const [hasCopied, setHasCopied] = useState(false);
+
+    // Derived values
+    const cartTotal = cartItems.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
+    const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
     // INSTANT LOAD: Initialize states from LocalStorage or Fallback
     const [categories, setCategories] = useState(() => getLocalData('categories', initialCategories));
     const [items, setItems] = useState(() => normalizeItems(getLocalData('menuItems', initialMenuItems)));
-
-    // Only show loading if we have ABSOLUTELY no items (rare if initialMenuItems exists)
     const [isLoading, setIsLoading] = useState(items.length === 0);
-
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [orderSuccess, setOrderSuccess] = useState(false);
     const [activeCategory, setActiveCategory] = useState(() => categories[0]?.id || '');
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-
     const [paymentSettings, setPaymentSettings] = useState(() => getLocalData('paymentSettings', []));
-
     const [orderTypes, setOrderTypes] = useState(() => getLocalData('orderTypes', [
-        { id: 'dine-in', name: 'Dine-in' },
-        { id: 'pickup', name: 'Take Out' },
-        { id: 'delivery', name: 'Delivery' }
+        { id: '11111111-1111-1111-1111-111111111111', name: 'Dine-in' },
+        { id: '22222222-2222-2222-2222-222222222222', name: 'Take Out' },
+        { id: 'cdf90bbb-4ab0-4159-9e3c-4d0f54572483', name: 'Delivery' }
     ]));
 
     const [storeSettings, setStoreSettings] = useState(() => {
@@ -132,36 +144,62 @@ const Home = () => {
             ]
         };
         const saved = getLocalData('storeSettings', fallback);
-        // Merge saved with fallback to ensure all keys exist
         return {
             ...fallback,
             ...saved,
-            // Specifically ensure banner_images has some content
             banner_images: (saved.banner_images && saved.banner_images.length > 0) ? saved.banner_images : fallback.banner_images
         };
     });
 
     const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
-    const getOrderType = (id) => {
+    // Helpers
+    const getOrderType = useCallback((id) => {
         const type = orderTypes.find(t => t.id === id);
         return type ? type.name : '';
-    };
+    }, [orderTypes]);
 
-    const isDeliveryType = (id) => {
+    const isDeliveryType = useCallback((id) => {
         const name = getOrderType(id).toLowerCase();
         return id === 'cdf90bbb-4ab0-4159-9e3c-4d0f54572483' || name.includes('delivery');
-    };
+    }, [getOrderType]);
 
-    const isDineInType = (id) => {
+    const isDineInType = useCallback((id) => {
         const name = getOrderType(id).toLowerCase();
-        return id === 'dine-in' || name.includes('dine-in');
-    };
+        return id === '11111111-1111-1111-1111-111111111111' || name.includes('dine-in');
+    }, [getOrderType]);
 
-    const isPickupType = (id) => {
+    const isPickupType = useCallback((id) => {
         const name = getOrderType(id).toLowerCase();
-        return id === 'pickup' || name.includes('take out') || name.includes('pickup');
-    };
+        return id === '22222222-2222-2222-2222-222222222222' || name.includes('take out') || name.includes('pickup');
+    }, [getOrderType]);
+
+    const generateOrderSummary = useCallback(() => {
+        const itemDetails = cartItems.map(item => {
+            let d = `${item.name} (x${item.quantity})`;
+            if (item.selectedVariation) d += ` - ${item.selectedVariation.name}`;
+            if (item.selectedFlavors && item.selectedFlavors.length > 0) d += ` [${item.selectedFlavors.join(', ')}]`;
+            if (item.selectedAddons.length > 0) d += ` + ${item.selectedAddons.map(a => a.name).join(', ')}`;
+            return d;
+        });
+
+        const summary = itemDetails.join('\n');
+        const typeName = getOrderType(orderType);
+        let info = `${isDeliveryType(orderType) ? 'Designated Name' : 'Name'}: ${customerDetails.name}`;
+        if (isDineInType(orderType)) info += ` | Table: ${customerDetails.table_number}`;
+        if (isPickupType(orderType)) info += ` | Phone: ${customerDetails.phone} | Time: ${customerDetails.pickup_time}`;
+        if (isDeliveryType(orderType)) info += ` | Phone: ${customerDetails.phone} | Address: ${customerDetails.address}`;
+
+        return `Hi! New order for ${customerDetails.name}:
+            
+${summary}
+
+Total: P${cartTotal}
+Type: ${typeName}
+${info}`.trim();
+    }, [cartItems, orderType, customerDetails, cartTotal, getOrderType, isDeliveryType, isDineInType, isPickupType]);
+
+
     const isStoreOpen = () => {
         if (storeSettings.manual_status === 'open') return true;
         if (storeSettings.manual_status === 'closed') return false;
@@ -278,18 +316,6 @@ const Home = () => {
         addons: []
     });
 
-    // Order type and payment state
-    const [orderType, setOrderType] = useState('');
-    const [paymentMethod, setPaymentMethod] = useState('');
-    const [customerDetails, setCustomerDetails] = useState({
-        name: '',
-        phone: '',
-        table_number: '',
-        address: '',
-        landmark: '',
-        pickup_time: ''
-    });
-
     const openProductSelection = useCallback((item) => {
         const firstVariation = (item.variations || []).find(v => !v.disabled);
         setSelectedProduct(item);
@@ -340,8 +366,7 @@ const Home = () => {
         setCartItems(cartItems.filter(i => i.cartItemId !== cartItemId));
     };
 
-    const cartTotal = cartItems.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
-    const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
 
     const handlePlaceOrder = async () => {
         if (!orderType) {
@@ -360,7 +385,7 @@ const Home = () => {
 
         setIsSubmitting(true);
 
-        try {
+            try {
             const itemDetails = cartItems.map(item => {
                 let d = `${item.name} (x${item.quantity})`;
                 if (item.selectedVariation) d += ` - ${item.selectedVariation.name}`;
@@ -379,48 +404,25 @@ const Home = () => {
             };
 
             const { error } = await supabase.from('orders').insert([newOrder]);
-            if (error) {
-                console.error('Error saving order to Supabase:', error);
-                alert('We had trouble saving your order to our system, but you can still proceed to Messenger.');
-            }
-
+            
             // Backup to LocalStorage
-            const localOrder = { ...newOrder, id: Date.now(), timestamp: new Date().toISOString() };
             try {
                 const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-                setLocalData('orders', [...existingOrders, localOrder]);
-            } catch (e) {
-                console.warn("Failed to backup order to localStorage");
-            }
+                setLocalData('orders', [...existingOrders, { ...newOrder, id: Date.now(), timestamp: new Date().toISOString() }]);
+            } catch (e) {}
 
-            // Prepare Messenger message (simplified to avoid spam detection)
-            const summary = itemDetails.join('\n');
-            const typeName = getOrderType(orderType);
-            let info = `${isDeliveryType(orderType) ? 'Designated Name' : 'Name'}: ${customerDetails.name}`;
-            if (isDineInType(orderType)) info += ` | Table: ${customerDetails.table_number}`;
-            if (isPickupType(orderType)) info += ` | Phone: ${customerDetails.phone} | Time: ${customerDetails.pickup_time}`;
-            if (isDeliveryType(orderType)) info += ` | Phone: ${customerDetails.phone} | Address: ${customerDetails.address}`;
-
-            const message = `Hi! New order for ${customerDetails.name}:
-            
-${summary}
-
-Total: P${cartTotal}
-Type: ${typeName}
-${info}`.trim();
-
+            const message = generateOrderSummary();
+            setLastOrderDetails(message);
             const messengerUrl = `https://m.me/61579032505526?text=${encodeURIComponent(message)}`;
 
             setOrderSuccess(true);
             setCartItems([]);
+            setHasCopied(false); // Reset for next order
 
-            const opened = window.open(messengerUrl, '_blank');
-            if (!opened) {
-                console.log("Popup blocked or failed to open automatically.");
-            }
+            window.open(messengerUrl, '_blank');
         } catch (err) {
             console.error('Order process error:', err);
-            alert('Something went wrong. Please try again or contact us directly.');
+            alert('Something went wrong. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -445,8 +447,8 @@ ${info}`.trim();
         <div className="page-wrapper">
             {/* Store Closed Overlay */}
             {!isOpen && (
-                <div style={{ background: 'var(--accent)', color: 'white', textAlign: 'center', padding: '12px', position: 'sticky', top: 0, zIndex: 1200, fontWeight: 700, fontSize: '0.9rem' }}>
-                    <Clock size={16} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+                <div style={{ background: 'var(--accent)', color: 'white', textAlign: 'center', padding: '6px 12px', position: 'sticky', top: 0, zIndex: 1200, fontWeight: 700, fontSize: '0.75rem' }}>
+                    <Clock size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
                     WE ARE CURRENTLY CLOSED. Our operating hours are {formatTime(storeSettings.open_time) || '10:00 AM'} to {formatTime(storeSettings.close_time) || '1:00 AM'}. Orders are disabled.
                 </div>
             )}
@@ -704,18 +706,26 @@ ${info}`.trim();
                                 <button
                                     className="btn-accent"
                                     onClick={() => {
-                                        const message = "Hello! I just placed an order on your website.";
-                                        window.open(`https://m.me/61579032505526?text=${encodeURIComponent(message)}`, '_blank');
+                                        window.open(`https://m.me/61579032505526?text=${encodeURIComponent(lastOrderDetails)}`, '_blank');
                                     }}
-                                    style={{ width: '100%', padding: '15px', borderRadius: '12px', fontWeight: 800 }}
+                                    style={{ width: '100%', padding: '15px', borderRadius: '12px', fontWeight: 800, marginBottom: '12px' }}
                                 >
-                                    Open Messenger Chat
+                                    Open Designer Chat
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(lastOrderDetails);
+                                        alert('Order details copied to clipboard!');
+                                    }}
+                                    style={{ width: '100%', padding: '15px', borderRadius: '12px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                >
+                                    <Copy size={16} /> Copy Order Details
                                 </button>
                                 <button
                                     onClick={() => { setIsCheckoutOpen(false); setOrderSuccess(false); }}
-                                    style={{ marginTop: '20px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', textDecoration: 'underline' }}
+                                    style={{ marginTop: '25px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.9rem' }}
                                 >
-                                    Close
+                                    Done
                                 </button>
                             </div>
                         ) : (
@@ -726,18 +736,6 @@ ${info}`.trim();
                                     <div style={{ marginBottom: '30px' }}>
                                         <label style={{ fontWeight: 700, fontSize: '1rem', display: 'block', marginBottom: '15px' }}>Payment Method</label>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-                                            <button
-                                                onClick={() => setPaymentMethod('Cash/COD')}
-                                                style={{
-                                                    padding: '15px', borderRadius: '15px', border: '2px solid',
-                                                    borderColor: paymentMethod === 'Cash/COD' ? 'var(--primary)' : '#e2e8f0',
-                                                    background: paymentMethod === 'Cash/COD' ? '#f0f9ff' : 'white',
-                                                    cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s'
-                                                }}
-                                            >
-                                                <div style={{ fontSize: '1.5rem', marginBottom: '5px' }}>💵</div>
-                                                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--primary)' }}>Cash / COD</div>
-                                            </button>
                                             {paymentSettings.map(method => (
                                                 <button
                                                     key={method.id}
@@ -781,6 +779,11 @@ ${info}`.trim();
                                                                     </div>
                                                                     <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)' }}>{method.account_name}</div>
                                                                 </div>
+                                                                {method.name.toLowerCase().includes('gcash') && (
+                                                                    <div style={{ marginTop: '15px', padding: '10px', background: '#eff6ff', borderRadius: '10px', fontSize: '0.85rem', color: '#1e40af', fontWeight: 500 }}>
+                                                                        📸 Please send a screenshot of your GCash payment along with your order details.
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         );
                                                     })()
@@ -813,6 +816,33 @@ ${info}`.trim();
                                         </div>
                                     )}
 
+                                    <button
+                                        onClick={() => {
+                                            const summary = generateOrderSummary();
+                                            navigator.clipboard.writeText(summary);
+                                            setHasCopied(true);
+                                            alert('Order details copied! You can now confirm your order.');
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px',
+                                            borderRadius: '12px',
+                                            background: hasCopied ? '#f0fdf4' : '#fff7ed',
+                                            border: '2px dashed',
+                                            borderColor: hasCopied ? '#22c55e' : '#f97316',
+                                            color: hasCopied ? '#166534' : '#9a3412',
+                                            fontWeight: 700,
+                                            marginBottom: '15px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '10px',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <Copy size={18} /> {hasCopied ? 'Order Details Copied! ✅' : 'Step 1: Copy Order Details (Required)'}
+                                    </button>
+
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '15px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                                         <span style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-muted)' }}>Total Amount:</span>
                                         <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>₱{cartTotal}</span>
@@ -821,13 +851,27 @@ ${info}`.trim();
                                     <button
                                         className="btn-accent"
                                         onClick={handlePlaceOrder}
-                                        disabled={isSubmitting}
-                                        style={{ width: '100%', padding: '18px', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontWeight: 800, fontSize: '1.1rem', opacity: isSubmitting ? 0.7 : 1 }}
+                                        disabled={isSubmitting || !hasCopied}
+                                        style={{
+                                            width: '100%',
+                                            padding: '18px',
+                                            borderRadius: '15px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '10px',
+                                            fontWeight: 800,
+                                            fontSize: '1.1rem',
+                                            opacity: (isSubmitting || !hasCopied) ? 0.6 : 1,
+                                            background: !hasCopied ? '#cbd5e1' : 'var(--primary)',
+                                            color: !hasCopied ? '#64748b' : '#4b3621',
+                                            cursor: !hasCopied ? 'not-allowed' : 'pointer'
+                                        }}
                                     >
                                         {isSubmitting ? (
                                             <>Processing...</>
                                         ) : (
-                                            <><MessageSquare size={22} /> Confirm Order</>
+                                            <><MessageSquare size={22} /> Step 2: Confirm Order</>
                                         )}
                                     </button>
                                 </div>

@@ -56,9 +56,9 @@ const AdminDashboard = () => {
     const [orderTypes, setOrderTypes] = useState(() => {
         const saved = localStorage.getItem('orderTypes');
         return saved ? JSON.parse(saved) : [
-            { id: 'dine-in', name: 'Dine-in' },
-            { id: 'pickup', name: 'Pickup' },
-            { id: 'delivery', name: 'Delivery' }
+            { id: '11111111-1111-1111-1111-111111111111', name: 'Dine-in' },
+            { id: '22222222-2222-2222-2222-222222222222', name: 'Take Out' },
+            { id: 'cdf90bbb-4ab0-4159-9e3c-4d0f54572483', name: 'Delivery' }
         ];
     });
 
@@ -559,16 +559,22 @@ const AdminDashboard = () => {
     // --- COMPONENT: ORDER TYPE MANAGER ---
     const OrderTypeManager = () => {
         const FIXED_TYPES = [
-            { id: 'dine-in', name: 'Dine-in', defaultActive: true },
-            { id: 'pickup', name: 'Take Out', defaultActive: true },
-            { id: 'delivery', name: 'Delivery', defaultActive: true }
+            { id: '11111111-1111-1111-1111-111111111111', name: 'Dine-in', defaultActive: true },
+            { id: '22222222-2222-2222-2222-222222222222', name: 'Take Out', defaultActive: true },
+            { id: 'cdf90bbb-4ab0-4159-9e3c-4d0f54572483', name: 'Delivery', defaultActive: true }
         ];
 
         const [localTypes, setLocalTypes] = useState([]);
 
         useEffect(() => {
             const merged = FIXED_TYPES.map(ft => {
-                const existing = orderTypes.find(t => t.id === ft.id);
+                // Match by ID or Name to handle legacy data and database UUIDs
+                const existing = orderTypes.find(t => 
+                    t.id === ft.id || 
+                    t.name.toLowerCase() === ft.name.toLowerCase() ||
+                    (ft.name === 'Take Out' && t.name.toLowerCase() === 'pickup') ||
+                    (ft.name === 'Pickup' && t.name.toLowerCase() === 'take out')
+                );
                 return existing ? existing : { ...ft, is_active: ft.defaultActive };
             });
             setLocalTypes(merged);
@@ -603,9 +609,9 @@ const AdminDashboard = () => {
                         <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: '#f8fafc', borderRadius: '15px', border: '1px solid #e2e8f0' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                                 <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: t.is_active ? 'var(--primary)' : '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                                    {t.id === 'dine-in' && <Utensils size={20} />}
-                                    {t.id === 'pickup' && <ShoppingBag size={20} />}
-                                    {t.id === 'delivery' && <Truck size={20} />}
+                                    {t.name.toLowerCase().includes('dine-in') && <Utensils size={20} />}
+                                    {(t.name.toLowerCase().includes('take out') || t.name.toLowerCase().includes('pickup')) && <ShoppingBag size={20} />}
+                                    {t.name.toLowerCase().includes('delivery') && <Truck size={20} />}
                                 </div>
                                 <div>
                                     <span style={{ fontWeight: 700, fontSize: '1.1rem', display: 'block' }}>{t.name}</span>
@@ -628,6 +634,7 @@ const AdminDashboard = () => {
     const PaymentSettings = () => {
         const [editingMethodId, setEditingMethodId] = useState(null);
         const [showAddMethod, setShowAddMethod] = useState(false);
+        const [tempQR, setTempQR] = useState('');
 
         const handleSaveMethod = async (e, methodId) => {
             e.preventDefault();
@@ -651,11 +658,12 @@ const AdminDashboard = () => {
                 name: formData.get('name'),
                 account_number: formData.get('accountNumber'),
                 account_name: formData.get('accountName'),
-                qr_url: ''
+                qr_url: tempQR
             };
             const { data, error } = await supabase.from('payment_settings').insert([newMethod]).select().single();
             if (error) { console.error(error); showMessage(`Error adding: ${error.message}`); return; }
             setPaymentSettings([...paymentSettings, data]);
+            setTempQR('');
             setShowAddMethod(false);
             showMessage('Payment method added!');
         };
@@ -682,12 +690,26 @@ const AdminDashboard = () => {
                     <div style={{ background: '#f8fafc', padding: '25px', borderRadius: '15px', border: '1px solid #e2e8f0', marginBottom: '30px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                             <h3 style={{ margin: 0 }}>Add New Payment Method</h3>
-                            <button onClick={() => setShowAddMethod(false)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><X size={20} /></button>
+                            <button onClick={() => { setShowAddMethod(false); setTempQR(''); }} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><X size={20} /></button>
                         </div>
                         <form onSubmit={handleAddMethod} style={{ display: 'grid', gap: '15px' }}>
                             <input name="name" placeholder="Method Name (e.g. Bank Transfer, GCash)" required style={inputStyle} />
                             <input name="accountNumber" placeholder="Account Number" required style={inputStyle} />
                             <input name="accountName" placeholder="Account Name" required style={inputStyle} />
+                            
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <label style={{ fontSize: '0.9rem', fontWeight: 600 }}>QR Code Image (Optional)</label>
+                                {tempQR && <img src={tempQR} style={{ width: '100px', height: '100px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #ddd' }} />}
+                                <input type="file" accept="image/*" onChange={async (e) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => setTempQR(reader.result);
+                                        reader.readAsDataURL(file);
+                                    }
+                                }} style={inputStyle} />
+                            </div>
+
                             <button type="submit" className="btn-primary">Save Method</button>
                         </form>
                     </div>
