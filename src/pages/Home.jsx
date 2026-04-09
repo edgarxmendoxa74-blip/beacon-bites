@@ -385,7 +385,7 @@ ${info}`.trim();
 
         setIsSubmitting(true);
 
-            try {
+        try {
             const itemDetails = cartItems.map(item => {
                 let d = `${item.name} (x${item.quantity})`;
                 if (item.selectedVariation) d += ` - ${item.selectedVariation.name}`;
@@ -404,20 +404,20 @@ ${info}`.trim();
             };
 
             const { error } = await supabase.from('orders').insert([newOrder]);
-            
+
             // Backup to LocalStorage
             try {
                 const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
                 setLocalData('orders', [...existingOrders, { ...newOrder, id: Date.now(), timestamp: new Date().toISOString() }]);
-            } catch (e) {}
+            } catch (e) { }
 
             const message = generateOrderSummary();
             setLastOrderDetails(message);
             const facebookUrl = `https://www.facebook.com/profile.php?id=61573331845595&_rdc=1&_rdr#`;
 
-            setOrderSuccess(true);
             setCartItems([]);
-            setHasCopied(false); // Reset for next order
+            setHasCopied(false);
+            setIsCheckoutOpen(false); // Close modal immediately
 
             window.open(facebookUrl, '_blank');
         } catch (err) {
@@ -646,7 +646,7 @@ ${info}`.trim();
                             <div style={{ marginBottom: '20px' }}>
                                 <label style={{ fontWeight: 700, display: 'block', marginBottom: '10px' }}>Select Flavors (You can pick multiple)</label>
                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                                    {selectedProduct.flavors.map(f => {
+                                    {selectedProduct.flavors && (Array.isArray(selectedProduct.flavors) ? selectedProduct.flavors : []).map(f => {
                                         const name = typeof f === 'string' ? f : f.name;
                                         const disabled = typeof f === 'object' ? f.disabled : false;
                                         if (disabled) return null;
@@ -692,191 +692,158 @@ ${info}`.trim();
                 </div>
             )}
 
-            {/* Checkout Modal (Remains same) */}
+            {/* Checkout Modal */}
             {isCheckoutOpen && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
                     <div style={{ background: 'white', maxWidth: '500px', width: '100%', borderRadius: '24px', padding: '30px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
-                        <button onClick={() => { setIsCheckoutOpen(false); setOrderSuccess(false); }} style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+                            <h2 style={{ margin: 0, color: 'var(--primary)', fontSize: '1.8rem' }}>Checkout</h2>
+                            <button onClick={() => setIsCheckoutOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+                        </div>
 
-                        {orderSuccess ? (
-                            <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                                <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🎉</div>
-                                <h2 style={{ color: 'var(--primary)', marginBottom: '10px' }}>Order Placed!</h2>
-                                <p style={{ color: 'var(--text-muted)', marginBottom: '30px' }}>Your order has been recorded. Click the button below to visit our Facebook Page and send us your copied details.</p>
-                                <button
-                                    className="btn-accent"
-                                    onClick={() => {
-                                        window.open('https://www.facebook.com/profile.php?id=61573331845595&_rdc=1&_rdr#', '_blank');
-                                    }}
-                                    style={{ width: '100%', padding: '15px', borderRadius: '12px', fontWeight: 800, marginBottom: '12px' }}
-                                >
-                                    Visit Facebook Page
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(lastOrderDetails);
-                                        alert('Order details copied to clipboard!');
-                                    }}
-                                    style={{ width: '100%', padding: '15px', borderRadius: '12px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                                >
-                                    <Copy size={16} /> Copy Order Details
-                                </button>
-                                <button
-                                    onClick={() => { setIsCheckoutOpen(false); setOrderSuccess(false); }}
-                                    style={{ marginTop: '25px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.9rem' }}
-                                >
-                                    Done
-                                </button>
-                            </div>
-                        ) : (
-                            <>
-                                <h2 style={{ marginBottom: '30px', fontSize: '1.8rem', color: 'var(--primary)' }}>Checkout</h2>
-
-                                <div style={{ marginBottom: '30px' }}>
-                                    <div style={{ marginBottom: '30px' }}>
-                                        <label style={{ fontWeight: 700, fontSize: '1rem', display: 'block', marginBottom: '15px' }}>Payment Method</label>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-                                            {paymentSettings.map(method => (
-                                                <button
-                                                    key={method.id}
-                                                    onClick={() => setPaymentMethod(method.id)}
-                                                    style={{
-                                                        padding: '15px', borderRadius: '15px', border: '2px solid',
-                                                        borderColor: paymentMethod === method.id ? 'var(--primary)' : '#e2e8f0',
-                                                        background: paymentMethod === method.id ? '#f0f9ff' : 'white',
-                                                        cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s'
-                                                    }}
-                                                >
-                                                    <div style={{ fontSize: '1.5rem', marginBottom: '5px' }}>💳</div>
-                                                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--primary)' }}>{method.name}</div>
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        {paymentMethod && paymentMethod !== 'Cash/COD' && (
-                                            <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
-                                                {paymentSettings.find(m => m.id === paymentMethod) ? (
-                                                    (() => {
-                                                        const method = paymentSettings.find(m => m.id === paymentMethod);
-                                                        return (
-                                                            <div style={{ textAlign: 'center' }}>
-                                                                <h4 style={{ color: 'var(--primary)', marginBottom: '15px' }}>Send {method.name} Payment</h4>
-                                                                {method.qr_url && (
-                                                                    <div style={{ background: 'white', padding: '10px', borderRadius: '12px', display: 'inline-block', marginBottom: '20px' }}>
-                                                                        <img src={method.qr_url} style={{ width: '180px', height: '180px', borderRadius: '10px', objectFit: 'contain' }} alt="QR Code" />
-                                                                    </div>
-                                                                )}
-                                                                <div style={{ background: 'white', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '5px' }}>Account Number</div>
-                                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '8px' }}>
-                                                                        <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--primary)' }}>{method.account_number}</div>
-                                                                        <button
-                                                                            onClick={() => { navigator.clipboard.writeText(method.account_number); alert('Copied!'); }}
-                                                                            style={{ border: 'none', background: 'var(--primary)', color: 'white', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600, fontSize: '0.8rem' }}
-                                                                        >
-                                                                            <Copy size={14} /> Copy
-                                                                        </button>
-                                                                    </div>
-                                                                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)' }}>{method.account_name}</div>
-                                                                </div>
-                                                                {method.name.toLowerCase().includes('gcash') && (
-                                                                    <div style={{ marginTop: '15px', padding: '10px', background: '#eff6ff', borderRadius: '10px', fontSize: '0.85rem', color: '#1e40af', fontWeight: 500 }}>
-                                                                        📸 Please send a screenshot of your GCash payment along with your order details.
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })()
-                                                ) : (
-                                                    <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Details not found.</p>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div style={{ marginBottom: '30px' }}>
-                                        <label style={{ fontWeight: 700, fontSize: '1rem', display: 'block', marginBottom: '15px' }}>Select Order Type</label>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px' }}>
-                                            {orderTypes.map(type => (
-                                                <button key={type.id} onClick={() => setOrderType(type.id)} style={{ padding: '8px', fontSize: '0.9rem', borderRadius: '12px', border: '1px solid var(--primary)', background: orderType === type.id ? 'var(--primary)' : 'white', color: orderType === type.id ? 'white' : 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}>{type.name}</button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {orderType && (
-                                        <div style={{ marginBottom: '30px' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                                <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px', fontWeight: 600 }}>{isDeliveryType(orderType) ? 'Designated Name' : 'Full Name'}</label><input type="text" value={customerDetails.name} onChange={(e) => setCustomerDetails({ ...customerDetails, name: e.target.value })} style={{ padding: '12px', width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} /></div>
-                                                {isDineInType(orderType) && <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px', fontWeight: 600 }}>Table Number</label><input type="text" value={customerDetails.table_number} onChange={(e) => setCustomerDetails({ ...customerDetails, table_number: e.target.value })} style={{ padding: '12px', width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} /></div>}
-                                                {!isDineInType(orderType) && <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px', fontWeight: 600 }}>Phone</label><input type="tel" value={customerDetails.phone} onChange={(e) => setCustomerDetails({ ...customerDetails, phone: e.target.value })} style={{ padding: '12px', width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} /></div>}
-                                                {isPickupType(orderType) && <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px', fontWeight: 600 }}>Time</label><input type="time" value={customerDetails.pickup_time} onChange={(e) => setCustomerDetails({ ...customerDetails, pickup_time: e.target.value })} style={{ padding: '12px', width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} /></div>}
-                                                {isDeliveryType(orderType) && <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px', fontWeight: 600 }}>Address</label><textarea value={customerDetails.address} onChange={(e) => setCustomerDetails({ ...customerDetails, address: e.target.value })} style={{ padding: '12px', width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} /></div>}
-                                                {!isDineInType(orderType) && !isPickupType(orderType) && !isDeliveryType(orderType) && <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px', fontWeight: 600 }}>Notes / Instructions</label><textarea value={customerDetails.landmark} onChange={(e) => setCustomerDetails({ ...customerDetails, landmark: e.target.value })} placeholder="Any specific requests..." style={{ padding: '12px', width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} /></div>}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <button
-                                        onClick={() => {
-                                            const summary = generateOrderSummary();
-                                            navigator.clipboard.writeText(summary);
-                                            setHasCopied(true);
-                                            alert('Order details copied! You can now confirm your order.');
-                                        }}
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px',
-                                            borderRadius: '12px',
-                                            background: hasCopied ? '#f0fdf4' : '#fff7ed',
-                                            border: '2px dashed',
-                                            borderColor: hasCopied ? '#22c55e' : '#f97316',
-                                            color: hasCopied ? '#166534' : '#9a3412',
-                                            fontWeight: 700,
-                                            marginBottom: '15px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '10px',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        <Copy size={18} /> {hasCopied ? 'Order Details Copied! ✅' : 'Step 1: Copy Order Details (Required)'}
-                                    </button>
-
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '15px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                        <span style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-muted)' }}>Total Amount:</span>
-                                        <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>₱{cartTotal}</span>
-                                    </div>
-
-                                    <button
-                                        className="btn-accent"
-                                        onClick={handlePlaceOrder}
-                                        disabled={isSubmitting || !hasCopied}
-                                        style={{
-                                            width: '100%',
-                                            padding: '18px',
-                                            borderRadius: '15px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '10px',
-                                            fontWeight: 800,
-                                            fontSize: '1.1rem',
-                                            opacity: (isSubmitting || !hasCopied) ? 0.6 : 1,
-                                            background: !hasCopied ? '#cbd5e1' : 'var(--primary)',
-                                            color: !hasCopied ? '#64748b' : '#4b3621',
-                                            cursor: !hasCopied ? 'not-allowed' : 'pointer'
-                                        }}
-                                    >
-                                        {isSubmitting ? (
-                                            <>Processing...</>
-                                        ) : (
-                                            <><MessageSquare size={22} /> Step 2: Confirm Order</>
-                                        )}
-                                    </button>
+                        <div style={{ display: 'grid', gap: '25px' }}>
+                            <div style={{ marginBottom: '30px' }}>
+                                <label style={{ fontWeight: 700, fontSize: '1rem', display: 'block', marginBottom: '15px' }}>Payment Method</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+                                    {paymentSettings.map(method => (
+                                        <button
+                                            key={method.id}
+                                            onClick={() => setPaymentMethod(method.id)}
+                                            style={{
+                                                padding: '15px', borderRadius: '15px', border: '2px solid',
+                                                borderColor: paymentMethod === method.id ? 'var(--primary)' : '#e2e8f0',
+                                                background: paymentMethod === method.id ? '#f0f9ff' : 'white',
+                                                cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            <div style={{ fontSize: '1.5rem', marginBottom: '5px' }}>💳</div>
+                                            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--primary)' }}>{method.name}</div>
+                                        </button>
+                                    ))}
                                 </div>
-                            </>
-                        )}
+
+                                {paymentMethod && paymentMethod !== 'Cash/COD' && (
+                                    <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
+                                        {paymentSettings.find(m => m.id === paymentMethod) ? (
+                                            (() => {
+                                                const method = paymentSettings.find(m => m.id === paymentMethod);
+                                                return (
+                                                    <div style={{ textAlign: 'center' }}>
+                                                        <h4 style={{ color: 'var(--primary)', marginBottom: '15px' }}>Send {method.name} Payment</h4>
+                                                        {method.qr_url && (
+                                                            <div style={{ background: 'white', padding: '10px', borderRadius: '12px', display: 'inline-block', marginBottom: '20px' }}>
+                                                                <img src={method.qr_url} style={{ width: '180px', height: '180px', borderRadius: '10px', objectFit: 'contain' }} alt="QR Code" />
+                                                            </div>
+                                                        )}
+                                                        <div style={{ background: 'white', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '5px' }}>Account Number</div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '8px' }}>
+                                                                <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--primary)' }}>{method.account_number}</div>
+                                                                <button
+                                                                    onClick={() => { navigator.clipboard.writeText(method.account_number); alert('Copied!'); }}
+                                                                    style={{ border: 'none', background: 'var(--primary)', color: 'white', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600, fontSize: '0.8rem' }}
+                                                                >
+                                                                    <Copy size={14} /> Copy
+                                                                </button>
+                                                            </div>
+                                                            <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)' }}>{method.account_name}</div>
+                                                        </div>
+                                                        {method.name.toLowerCase().includes('gcash') && (
+                                                            <div style={{ marginTop: '15px', padding: '10px', background: '#eff6ff', borderRadius: '10px', fontSize: '0.85rem', color: '#1e40af', fontWeight: 500 }}>
+                                                                📸 Please send a screenshot of your GCash payment along with your order details.
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()
+                                        ) : (
+                                            <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Details not found.</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={{ marginBottom: '30px' }}>
+                                <label style={{ fontWeight: 700, fontSize: '1rem', display: 'block', marginBottom: '15px' }}>Select Order Type</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px' }}>
+                                    {orderTypes.map(type => (
+                                        <button key={type.id} onClick={() => setOrderType(type.id)} style={{ padding: '8px', fontSize: '0.9rem', borderRadius: '12px', border: '1px solid var(--primary)', background: orderType === type.id ? 'var(--primary)' : 'white', color: orderType === type.id ? 'white' : 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}>{type.name}</button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {orderType && (
+                                <div style={{ marginBottom: '30px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                        <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px', fontWeight: 600 }}>{isDeliveryType(orderType) ? 'Designated Name' : 'Full Name'}</label><input type="text" value={customerDetails.name} onChange={(e) => setCustomerDetails({ ...customerDetails, name: e.target.value })} style={{ padding: '12px', width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} /></div>
+                                        {isDineInType(orderType) && <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px', fontWeight: 600 }}>Table Number</label><input type="text" value={customerDetails.table_number} onChange={(e) => setCustomerDetails({ ...customerDetails, table_number: e.target.value })} style={{ padding: '12px', width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} /></div>}
+                                        {!isDineInType(orderType) && <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px', fontWeight: 600 }}>Phone</label><input type="tel" value={customerDetails.phone} onChange={(e) => setCustomerDetails({ ...customerDetails, phone: e.target.value })} style={{ padding: '12px', width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} /></div>}
+                                        {isPickupType(orderType) && <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px', fontWeight: 600 }}>Time</label><input type="time" value={customerDetails.pickup_time} onChange={(e) => setCustomerDetails({ ...customerDetails, pickup_time: e.target.value })} style={{ padding: '12px', width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} /></div>}
+                                        {isDeliveryType(orderType) && <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px', fontWeight: 600 }}>Address</label><textarea value={customerDetails.address} onChange={(e) => setCustomerDetails({ ...customerDetails, address: e.target.value })} style={{ padding: '12px', width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} /></div>}
+                                        {!isDineInType(orderType) && !isPickupType(orderType) && !isDeliveryType(orderType) && <div><label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px', fontWeight: 600 }}>Notes / Instructions</label><textarea value={customerDetails.landmark} onChange={(e) => setCustomerDetails({ ...customerDetails, landmark: e.target.value })} placeholder="Any specific requests..." style={{ padding: '12px', width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} /></div>}
+                                    </div>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={() => {
+                                    const summary = generateOrderSummary();
+                                    navigator.clipboard.writeText(summary);
+                                    setHasCopied(true);
+                                    alert('Order details copied! You can now confirm your order.');
+                                }}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    borderRadius: '12px',
+                                    background: hasCopied ? '#f0fdf4' : '#fff7ed',
+                                    border: '2px dashed',
+                                    borderColor: hasCopied ? '#22c55e' : '#f97316',
+                                    color: hasCopied ? '#166534' : '#9a3412',
+                                    fontWeight: 700,
+                                    marginBottom: '15px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '10px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <Copy size={18} /> {hasCopied ? 'Order Details Copied! ✅' : 'Step 1: Copy Order Details (Required)'}
+                            </button>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '15px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                <span style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-muted)' }}>Total Amount:</span>
+                                <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>₱{cartTotal}</span>
+                            </div>
+
+                            <button
+                                className="btn-accent"
+                                onClick={handlePlaceOrder}
+                                disabled={isSubmitting || !hasCopied}
+                                style={{
+                                    width: '100%',
+                                    padding: '18px',
+                                    borderRadius: '15px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '10px',
+                                    fontWeight: 800,
+                                    fontSize: '1.1rem',
+                                    opacity: (isSubmitting || !hasCopied) ? 0.6 : 1,
+                                    background: !hasCopied ? '#cbd5e1' : 'var(--primary)',
+                                    color: !hasCopied ? '#64748b' : '#4b3621',
+                                    cursor: !hasCopied ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                {isSubmitting ? (
+                                    <>Processing...</>
+                                ) : (
+                                    <><MessageSquare size={22} /> Step 2: Confirm Order</>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
