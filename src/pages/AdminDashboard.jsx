@@ -188,6 +188,12 @@ const AdminDashboard = () => {
         navigate('/admin');
     };
 
+    const getOrderTypeName = (id) => {
+        if (!id) return 'N/A';
+        const type = orderTypes.find(t => t.id === id);
+        return type ? type.name : id;
+    };
+
     // --- COMPONENT: MENU MANAGER ---
     const MenuManager = () => {
         const [editingItem, setEditingItem] = useState(null);
@@ -328,9 +334,9 @@ const AdminDashboard = () => {
                                         {item.promo_price ? (
                                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                 <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)', fontSize: '0.8rem' }}>₱{item.price}</span>
-                                                <span style={{ color: '#ef4444', fontWeight: 700 }}>₱{item.promo_price}</span>
+                                                <span style={{ color: '#16a34a', fontWeight: 700 }}>₱{item.promo_price}</span>
                                             </div>
-                                        ) : <span style={{ fontWeight: 700 }}>₱{item.price}</span>}
+                                        ) : <span style={{ fontWeight: 700, color: '#16a34a' }}>₱{item.price}</span>}
                                     </td>
                                     <td style={{ padding: '15px', borderTopRightRadius: '12px', borderBottomRightRadius: '12px' }}>
                                         <div style={{ display: 'flex', gap: '8px' }}>
@@ -356,45 +362,73 @@ const AdminDashboard = () => {
                     <button onClick={() => setEditingItem(null)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><X /></button>
                 </div>
                 <form onSubmit={handleSubmit}>
-                    <div style={{ display: 'grid', gap: '15px', marginBottom: '20px' }}>
-                        <input name="name" defaultValue={editingItem.name} placeholder="Product Name" required style={inputStyle} />
-                        <textarea name="description" defaultValue={editingItem.description} placeholder="Description" style={inputStyle} />
+                    <div style={{ display: 'grid', gap: '20px', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#334155' }}>Product Name</label>
+                            <input name="name" defaultValue={editingItem.name} placeholder="Enter product name" required style={inputStyle} />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#334155' }}>Description</label>
+                            <textarea name="description" defaultValue={editingItem.description} placeholder="Enter product description" style={{ ...inputStyle, minHeight: '80px' }} />
+                        </div>
+
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                            <input name="price" type="number" defaultValue={editingItem.price} placeholder="Price" required style={inputStyle} />
-                            <input name="promoPrice" type="number" defaultValue={editingItem.promo_price} placeholder="Promo Price (Optional)" style={inputStyle} />
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#16a34a' }}>Base Price (₱)</label>
+                                <input name="price" type="number" defaultValue={editingItem.price} placeholder="0.00" required style={inputStyle} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#16a34a' }}>Promo Price (₱ - Optional)</label>
+                                <input name="promoPrice" type="number" defaultValue={editingItem.promo_price} placeholder="Leave empty if none" style={inputStyle} />
+                            </div>
                         </div>
-                        <select name="categoryId" defaultValue={editingItem.category_id} style={inputStyle}>
-                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <label style={{ fontWeight: 600 }}>Product Image</label>
-                            {editingItem.image && <img src={editingItem.image} style={{ width: '100px', height: '100px', borderRadius: '12px', objectFit: 'cover' }} />}
-                            <input type="file" accept="image/*" onChange={(e) => {
-                                const file = e.target.files[0];
-                                if (file) {
-                                    const reader = new FileReader();
-                                    reader.onloadend = () => setEditingItem({ ...editingItem, image: reader.result });
-                                    reader.readAsDataURL(file);
-                                }
-                            }} style={inputStyle} />
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#334155' }}>Product Category</label>
+                            <select name="categoryId" defaultValue={editingItem.category_id} style={inputStyle}>
+                                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <input name="outOfStock" type="checkbox" defaultChecked={editingItem.out_of_stock} style={{ width: '20px', height: '20px' }} />
-                            <label style={{ fontWeight: 600 }}>Mark as Out of Stock</label>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#334155' }}>Product Image</label>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                {editingItem.image && <img src={editingItem.image} style={{ width: '80px', height: '80px', borderRadius: '12px', objectFit: 'cover', border: '1px solid #e2e8f0' }} />}
+                                <input type="file" accept="image/*" onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => setEditingItem({ ...editingItem, image: reader.result });
+                                        reader.readAsDataURL(file);
+                                    }
+                                }} style={{ ...inputStyle, flex: 1 }} />
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                            <input name="outOfStock" type="checkbox" defaultChecked={editingItem.out_of_stock} style={{ width: '20px', height: '20px', cursor: 'pointer' }} />
+                            <label style={{ fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', color: '#ef4444' }}>Mark as Out of Stock</label>
                         </div>
                     </div>
 
                     {/* Variations */}
                     <SectionLabel title="Variations" onAdd={() => setTempVariations([...tempVariations, { name: 'Size', price: 0 }])} />
                     {tempVariations.map((v, i) => (
-                        <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center' }}>
-                            <input value={v.name} onChange={e => { const n = [...tempVariations]; n[i].name = e.target.value; setTempVariations(n); }} placeholder="Name" style={inputStyle} />
-                            <input type="number" value={v.price} onChange={e => { const n = [...tempVariations]; n[i].price = Number(e.target.value); setTempVariations(n); }} placeholder="Price" style={inputStyle} />
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}>
-                                <input type="checkbox" checked={v.disabled} onChange={e => { const n = [...tempVariations]; n[i].disabled = e.target.checked; setTempVariations(n); }} />
-                                <label style={{ fontSize: '0.75rem' }}>Disabled</label>
+                        <div key={i} style={{ display: 'flex', gap: '12px', marginBottom: '15px', alignItems: 'flex-end', background: '#fff', padding: '10px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                            <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>Variation Name</label>
+                                <input value={v.name} onChange={e => { const n = [...tempVariations]; n[i].name = e.target.value; setTempVariations(n); }} placeholder="e.g. Small, 6pcs" style={inputStyle} />
                             </div>
-                            <button type="button" onClick={() => setTempVariations(tempVariations.filter((_, idx) => idx !== i))} style={{ color: 'red', border: 'none', background: 'none' }}><X size={18} /></button>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#16a34a' }}>Price (₱)</label>
+                                <input type="number" value={v.price} onChange={e => { const n = [...tempVariations]; n[i].price = Number(e.target.value); setTempVariations(n); }} placeholder="0" style={inputStyle} />
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '12px' }}>
+                                <input type="checkbox" checked={v.disabled} onChange={e => { const n = [...tempVariations]; n[i].disabled = e.target.checked; setTempVariations(n); }} style={{ width: '18px', height: '18px' }} />
+                                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ef4444' }}>Sold Out</label>
+                            </div>
+                            <button type="button" onClick={() => setTempVariations(tempVariations.filter((_, idx) => idx !== i))} style={{ paddingBottom: '12px', color: '#ef4444', border: 'none', background: 'none', cursor: 'pointer' }}><X size={20} /></button>
                         </div>
                     ))}
 
@@ -404,19 +438,22 @@ const AdminDashboard = () => {
                         const name = typeof f === 'string' ? f : f.name;
                         const disabled = typeof f === 'object' ? f.disabled : false;
                         return (
-                            <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center' }}>
-                                <input
-                                    value={name}
-                                    onChange={e => {
-                                        const n = [...tempFlavors];
-                                        if (typeof n[i] === 'string') n[i] = { name: e.target.value, disabled: false };
-                                        else n[i] = { ...n[i], name: e.target.value };
-                                        setTempFlavors(n);
-                                    }}
-                                    placeholder="Flavor Name (e.g. Buffalo)"
-                                    style={inputStyle}
-                                />
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}>
+                            <div key={i} style={{ display: 'flex', gap: '12px', marginBottom: '15px', alignItems: 'flex-end', background: '#fff', padding: '10px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>Flavor Name</label>
+                                    <input
+                                        value={name}
+                                        onChange={e => {
+                                            const n = [...tempFlavors];
+                                            if (typeof n[i] === 'string') n[i] = { name: e.target.value, disabled: false };
+                                            else n[i] = { ...n[i], name: e.target.value };
+                                            setTempFlavors(n);
+                                        }}
+                                        placeholder="e.g. Chocolate, Vanilla"
+                                        style={inputStyle}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '12px' }}>
                                     <input
                                         type="checkbox"
                                         checked={disabled}
@@ -426,10 +463,11 @@ const AdminDashboard = () => {
                                             else n[i] = { ...n[i], disabled: e.target.checked };
                                             setTempFlavors(n);
                                         }}
+                                        style={{ width: '18px', height: '18px' }}
                                     />
-                                    <label style={{ fontSize: '0.75rem' }}>Disabled</label>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ef4444' }}>Sold Out</label>
                                 </div>
-                                <button type="button" onClick={() => setTempFlavors(tempFlavors.filter((_, idx) => idx !== i))} style={{ color: 'red', border: 'none', background: 'none' }}><X size={18} /></button>
+                                <button type="button" onClick={() => setTempFlavors(tempFlavors.filter((_, idx) => idx !== i))} style={{ paddingBottom: '12px', color: '#ef4444', border: 'none', background: 'none', cursor: 'pointer' }}><X size={20} /></button>
                             </div>
                         );
                     })}
@@ -437,14 +475,20 @@ const AdminDashboard = () => {
                     {/* Addons */}
                     <SectionLabel title="Add-ons" onAdd={() => setTempAddons([...tempAddons, { name: 'Addon', price: 0 }])} />
                     {tempAddons.map((v, i) => (
-                        <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center' }}>
-                            <input value={v.name} onChange={e => { const n = [...tempAddons]; n[i].name = e.target.value; setTempAddons(n); }} placeholder="Name" style={inputStyle} />
-                            <input type="number" value={v.price} onChange={e => { const n = [...tempAddons]; n[i].price = Number(e.target.value); setTempAddons(n); }} placeholder="Price" style={inputStyle} />
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}>
-                                <input type="checkbox" checked={v.disabled} onChange={e => { const n = [...tempAddons]; n[i].disabled = e.target.checked; setTempAddons(n); }} />
-                                <label style={{ fontSize: '0.75rem' }}>Disabled</label>
+                        <div key={i} style={{ display: 'flex', gap: '12px', marginBottom: '15px', alignItems: 'flex-end', background: '#fff', padding: '10px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                            <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>Add-on Name</label>
+                                <input value={v.name} onChange={e => { const n = [...tempAddons]; n[i].name = e.target.value; setTempAddons(n); }} placeholder="e.g. Extra Cheese" style={inputStyle} />
                             </div>
-                            <button type="button" onClick={() => setTempAddons(tempAddons.filter((_, idx) => idx !== i))} style={{ color: 'red', border: 'none', background: 'none' }}><X size={18} /></button>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#16a34a' }}>Price (₱)</label>
+                                <input type="number" value={v.price} onChange={e => { const n = [...tempAddons]; n[i].price = Number(e.target.value); setTempAddons(n); }} placeholder="0" style={inputStyle} />
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '12px' }}>
+                                <input type="checkbox" checked={v.disabled} onChange={e => { const n = [...tempAddons]; n[i].disabled = e.target.checked; setTempAddons(n); }} style={{ width: '18px', height: '18px' }} />
+                                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ef4444' }}>Sold Out</label>
+                            </div>
+                            <button type="button" onClick={() => setTempAddons(tempAddons.filter((_, idx) => idx !== i))} style={{ paddingBottom: '12px', color: '#ef4444', border: 'none', background: 'none', cursor: 'pointer' }}><X size={20} /></button>
                         </div>
                     ))}
 
@@ -827,7 +871,7 @@ const AdminDashboard = () => {
                         <div>
                             <strong>OR#:</strong> ${order.id.toString().slice(-6).toUpperCase()}<br>
                             <strong>Date:</strong> ${new Date(order.timestamp).toLocaleString()}<br>
-                            <strong>Type:</strong> ${(order.order_type || 'Dine-in').toUpperCase()}<br>
+                            <strong>Type:</strong> ${(getOrderTypeName(order.order_type)).toUpperCase()}<br>
                             <strong>Cust:</strong> ${order.customer_details?.name}
                             ${order.customer_details?.table_number ? `<br><strong>Table:</strong> ${order.customer_details.table_number}` : ''}
                         </div>
@@ -885,7 +929,7 @@ const AdminDashboard = () => {
                             <div key={order.id || idx} style={{ padding: '20px', border: '1px solid #e2e8f0', borderRadius: '15px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
                                     <div>
-                                        <span style={{ fontWeight: 800, color: 'var(--primary)', marginRight: '10px' }}>{(order.order_type || 'N/A').toUpperCase()}</span>
+                                        <span style={{ fontWeight: 800, color: 'var(--primary)', marginRight: '10px' }}>{(getOrderTypeName(order.order_type)).toUpperCase()}</span>
                                         <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{new Date(order.timestamp).toLocaleString()}</span>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

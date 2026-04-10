@@ -74,7 +74,7 @@ const MenuItem = React.memo(({ item, isOpen, openProductSelection }) => (
                     {item.promo_price ? (
                         <>
                             <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)', fontSize: '0.8rem' }}>₱{item.price}</span>
-                            <span className="menu-item-price" style={{ color: '#ef4444' }}>₱{item.promo_price}</span>
+                            <span className="menu-item-price" style={{ color: '#16a34a' }}>₱{item.promo_price}</span>
                         </>
                     ) : (
                         <span className="menu-item-price">₱{item.price}</span>
@@ -541,11 +541,12 @@ ${info}`.trim();
             </section>
 
 
-            <main className="container" id="menu" style={{ padding: '80px 0' }}>
+            <main className="container" id="menu" style={{ padding: '40px 0' }}>
                 <div style={{ textAlign: 'center', marginBottom: '50px' }}>
-                    <h2 style={{ fontSize: '3rem', marginBottom: '10px', color: 'var(--primary)' }}>Our Menu</h2>
-                    <p style={{ color: 'var(--text-muted)' }}>Pick your favorites and add them to your cart.</p>
+                    <h2 style={{ fontSize: '3rem', marginBottom: '0px', color: 'var(--primary)' }}>Menu</h2>
+                    <p style={{ color: 'var(--text-muted)', marginTop: '-8px' }}>order here</p>
                 </div>
+
 
                 {isLoading ? (
                     <div style={{ textAlign: 'center', padding: '100px 0' }}>
