@@ -26,7 +26,8 @@ import {
     FileText,
     Camera,
     Utensils,
-    Truck
+    Truck,
+    Info
 } from 'lucide-react';
 import { categories as initialCategories, menuItems as initialItems } from '../data/MenuData';
 
@@ -192,6 +193,13 @@ const AdminDashboard = () => {
         if (!id) return 'N/A';
         const type = orderTypes.find(t => t.id === id);
         return type ? type.name : id;
+    };
+
+    const getPaymentMethodName = (id) => {
+        if (!id) return 'N/A';
+        if (id === 'Cash/COD') return 'Cash / COD';
+        const method = paymentSettings.find(m => m.id === id);
+        return method ? method.name : id;
     };
 
     // --- COMPONENT: MENU MANAGER ---
@@ -925,10 +933,11 @@ const AdminDashboard = () => {
 
                 {orders.length === 0 ? <p className="text-muted">No orders recorded yet.</p> : (
                     <div style={{ display: 'grid', gap: '20px' }}>
-                        {orders.slice().reverse().map((order, idx) => (
+                        {orders.map((order, idx) => (
                             <div key={order.id || idx} style={{ padding: '20px', border: '1px solid #e2e8f0', borderRadius: '15px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
                                     <div>
+                                        <span style={{ fontWeight: 800, color: '#64748b', marginRight: '10px' }}>#{order.order_number || idx + 1}</span>
                                         <span style={{ fontWeight: 800, color: 'var(--primary)', marginRight: '10px' }}>{(getOrderTypeName(order.order_type)).toUpperCase()}</span>
                                         <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{new Date(order.timestamp).toLocaleString()}</span>
                                     </div>
@@ -967,10 +976,12 @@ const AdminDashboard = () => {
                                     </div>
                                 </div>
                                 <div style={{ marginBottom: '10px', fontSize: '0.95rem' }}>
-                                    <strong>{order.customer_details?.name}</strong> • {order.payment_method}
-                                    {order.customer_details?.phone && <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{order.customer_details.phone}</div>}
-                                    {order.customer_details?.tableNumber && <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Table: {order.customer_details.tableNumber}</div>}
-                                    {order.customer_details?.address && <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Address: {order.customer_details.address}</div>}
+                                    <strong style={{ fontSize: '1.1rem' }}>{order.customer_details?.name}</strong> • <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{getPaymentMethodName(order.payment_method)}</span>
+                                    {order.customer_details?.phone && <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' }}><Phone size={12} /> {order.customer_details.phone}</div>}
+                                    {order.customer_details?.table_number && <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}><Utensils size={12} /> Table: {order.customer_details.table_number}</div>}
+                                    {order.customer_details?.pickup_time && <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}><Clock size={12} /> Pickup Time: {order.customer_details.pickup_time}</div>}
+                                    {order.customer_details?.address && <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}><MapPin size={12} /> Address: {order.customer_details.address}</div>}
+                                    {order.customer_details?.landmark && <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px', fontStyle: 'italic' }}><Info size={12} /> Notes: {order.customer_details.landmark}</div>}
                                 </div>
                                 <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '12px', fontSize: '0.9rem' }}>
                                     {order.items.map((item, i) => (

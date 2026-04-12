@@ -117,7 +117,7 @@ const Home = () => {
     const [items, setItems] = useState(() => normalizeItems(getLocalData('menuItems', initialMenuItems)));
     const [isLoading, setIsLoading] = useState(items.length === 0);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [activeCategory, setActiveCategory] = useState(() => categories[0]?.id || '');
+    const [activeCategory, setActiveCategory] = useState('all');
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [paymentSettings, setPaymentSettings] = useState(() => getLocalData('paymentSettings', []));
@@ -475,6 +475,15 @@ ${info}`.trim();
             <div className="category-slider-wrapper">
                 <div className="container">
                     <div className="category-slider">
+                        <button
+                            className={`category-slide-btn ${activeCategory === 'all' || !activeCategory ? 'active' : ''}`}
+                            onClick={() => {
+                                setActiveCategory('all');
+                                document.getElementById('menu')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }}
+                        >
+                            All
+                        </button>
                         {categories.map(cat => (
                             <button
                                 key={cat.id}
