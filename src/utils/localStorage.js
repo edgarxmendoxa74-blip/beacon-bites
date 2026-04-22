@@ -26,7 +26,7 @@ export const setLocalData = (key, data) => {
                 // We MUST strip it down or give up.
                 
                 if (key === 'menuItems' && Array.isArray(data)) {
-                    console.warn('Attempting to save minimal menuItems (no images, no descriptions) to stays within quota...');
+                    console.warn('Attempting to save minimal menuItems (no images, no descriptions) to stay within quota...');
                     // Extremely aggressive stripping: keep only name, price, category, and ID
                     const minimalData = data.map(item => ({
                         id: item.id,
@@ -40,10 +40,10 @@ export const setLocalData = (key, data) => {
                     
                     try {
                         localStorage.setItem(key, JSON.stringify(minimalData));
-                        console.log('Saved minimal menuItems to localStorage.');
+                        console.log(`Successfully saved minimal ${key} to localStorage.`);
                         return;
                     } catch (sErr) {
-                        console.error('Even minimal menuItems exceeded 5MB. Abandoning local cache.');
+                        console.error(`Even minimal ${key} exceeded 5MB. Abandoning local cache.`);
                         localStorage.removeItem(key);
                     }
                 } else if (key === 'storeSettings') {
