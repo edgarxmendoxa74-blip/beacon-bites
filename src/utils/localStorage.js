@@ -13,7 +13,6 @@ export const setLocalData = (key, data) => {
             // Priority for clearing:
             // 1. Old orders (often the largest growing data)
             // 2. Menu items cache (can be re-fetched)
-            // 3. Other settings
             
             if (key !== 'orders') {
                 localStorage.removeItem('orders');
@@ -23,7 +22,7 @@ export const setLocalData = (key, data) => {
                 localStorage.setItem(key, JSON.stringify(data));
                 console.log(`Successfully saved ${key} after clearing space.`);
             } catch (retryError) {
-                // if it still fails, and it's not the menuItems we're trying to save, clear menuItems too
+                // If it still fails, and it's not the menuItems we're trying to save, clear menuItems too
                 if (key !== 'menuItems') {
                     localStorage.removeItem('menuItems');
                 }
@@ -31,6 +30,28 @@ export const setLocalData = (key, data) => {
                 try {
                     localStorage.setItem(key, JSON.stringify(data));
                 } catch (lastError) {
+                    // FINAL FALLBACK: Strip large Base64 images from common large keys
+                    if (key === 'menuItems' && Array.isArray(data)) {
+                        console.warn('Attempting to save menuItems without images to stay within quota...');
+                        const strippedData = data.map(item => ({ 
+                            ...item, 
+                            image: (item.image && item.image.length > 5000) ? '' : item.image 
+                        }));
+                        try {
+                            localStorage.setItem(key, JSON.stringify(strippedData));
+                            return;
+                        } catch (sErr) {}
+                    }
+                    
+                    if (key === 'storeSettings' && data) {
+                        console.warn('Attempting to save storeSettings without banner images to stay within quota...');
+                        const strippedData = { ...data, banner_images: [] };
+                        try {
+                            localStorage.setItem(key, JSON.stringify(strippedData));
+                            return;
+                        } catch (sErr) {}
+                    }
+
                     console.error(`Failed to save ${key} even after clearing caches. Data may be too large.`, lastError.message);
                 }
             }
