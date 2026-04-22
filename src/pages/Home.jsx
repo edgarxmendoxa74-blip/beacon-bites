@@ -24,31 +24,8 @@ import {
 import { Link } from 'react-router-dom';
 import { categories as initialCategories, menuItems as initialMenuItems } from '../data/MenuData';
 import { supabase } from '../supabaseClient';
+import { getLocalData, setLocalData } from '../utils/localStorage';
 
-// Helper to safely parse localized storage data
-const getLocalData = (key, fallback) => {
-    try {
-        const saved = localStorage.getItem(key);
-        if (!saved) return fallback;
-        const parsed = JSON.parse(saved);
-        // Ensure we have actual data, not just an empty array
-        if (Array.isArray(parsed) && parsed.length === 0 && Array.isArray(fallback) && fallback.length > 0) {
-            return fallback;
-        }
-        return parsed || fallback;
-    } catch (e) {
-        return fallback;
-    }
-};
-
-// Helper to safely save to localStorage
-const setLocalData = (key, data) => {
-    try {
-        localStorage.setItem(key, JSON.stringify(data));
-    } catch (e) {
-        console.warn(`Failed to save ${key} to localStorage:`, e.name === 'QuotaExceededError' ? 'Quota exceeded' : e.message);
-    }
-};
 
 // Normalize menu items (ensure category_id is used for both fallback and DB)
 const normalizeItems = (items) => {
@@ -403,10 +380,11 @@ ${info}`.trim();
 
             const { error } = await supabase.from('orders').insert([newOrder]);
 
-            // Backup to LocalStorage
+            // Backup to LocalStorage (Keep only last 20 orders to save space)
             try {
-                const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-                setLocalData('orders', [...existingOrders, { ...newOrder, id: Date.now(), timestamp: new Date().toISOString() }]);
+                const existingOrders = getLocalData('orders', []);
+                const updatedOrders = [{ ...newOrder, id: Date.now(), timestamp: new Date().toISOString() }, ...existingOrders].slice(0, 20);
+                setLocalData('orders', updatedOrders);
             } catch (e) { }
 
             const message = generateOrderSummary();

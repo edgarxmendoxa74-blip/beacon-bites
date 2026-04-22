@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { getLocalData, setLocalData } from '../utils/localStorage';
 import {
     LayoutDashboard,
     LogOut,
@@ -39,66 +40,35 @@ const AdminDashboard = () => {
     const [message, setMessage] = useState('');
 
     // --- STATE MANAGEMENT ---
-    const [items, setItems] = useState(() => {
-        const saved = localStorage.getItem('menuItems');
-        return saved ? JSON.parse(saved) : initialItems;
-    });
+    const [items, setItems] = useState(() => getLocalData('menuItems', initialItems));
+    const [categories, setCategories] = useState(() => getLocalData('categories', initialCategories));
+    const [orders, setOrders] = useState(() => getLocalData('orders', []));
 
-    const [categories, setCategories] = useState(() => {
-        const saved = localStorage.getItem('categories');
-        return saved ? JSON.parse(saved) : initialCategories;
-    });
+    const [orderTypes, setOrderTypes] = useState(() => getLocalData('orderTypes', [
+        { id: '11111111-1111-1111-1111-111111111111', name: 'Dine-in' },
+        { id: '22222222-2222-2222-2222-222222222222', name: 'Take Out' },
+        { id: 'cdf90bbb-4ab0-4159-9e3c-4d0f54572483', name: 'Delivery' }
+    ]));
 
-    const [orders, setOrders] = useState(() => {
-        const saved = localStorage.getItem('orders');
-        return saved ? JSON.parse(saved) : [];
-    });
+    const [paymentSettings, setPaymentSettings] = useState(() => getLocalData('paymentSettings', [
+        { id: 'gcash', name: 'GCash', accountNumber: '', accountName: '', qrUrl: '' },
+        { id: 'paymaya', name: 'PayMaya', accountNumber: '', accountName: '', qrUrl: '' }
+    ]));
 
-    const [orderTypes, setOrderTypes] = useState(() => {
-        const saved = localStorage.getItem('orderTypes');
-        return saved ? JSON.parse(saved) : [
-            { id: '11111111-1111-1111-1111-111111111111', name: 'Dine-in' },
-            { id: '22222222-2222-2222-2222-222222222222', name: 'Take Out' },
-            { id: 'cdf90bbb-4ab0-4159-9e3c-4d0f54572483', name: 'Delivery' }
-        ];
-    });
-
-    const [paymentSettings, setPaymentSettings] = useState(() => {
-        const saved = localStorage.getItem('paymentSettings');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            if (!Array.isArray(parsed)) {
-                // Migration for existing users
-                return [
-                    { id: 'gcash', name: 'GCash', accountNumber: parsed.gcash?.number || '', accountName: parsed.gcash?.name || '', qrUrl: parsed.gcash?.qrUrl || '' },
-                    { id: 'paymaya', name: 'PayMaya', accountNumber: parsed.paymaya?.number || '', accountName: parsed.paymaya?.name || '', qrUrl: parsed.paymaya?.qrUrl || '' }
-                ];
-            }
-            return parsed;
-        }
-        return [
-            { id: 'gcash', name: 'GCash', accountNumber: '', accountName: '', qrUrl: '' },
-            { id: 'paymaya', name: 'PayMaya', accountNumber: '', accountName: '', qrUrl: '' }
-        ];
-    });
-
-    const [storeSettings, setStoreSettings] = useState(() => {
-        const saved = localStorage.getItem('storeSettings');
-        return saved ? JSON.parse(saved) : {
-            manual_status: 'auto', // auto, open, closed
-            open_time: '10:00',
-            close_time: '01:00',
-            store_name: '',
-            address: 'Poblacion, El Nido, Palawan',
-            contact: '09563713967',
-            logo_url: '',
-            banner_images: [
-                'https://images.unsplash.com/photo-1517701604599-bb29b565094d?auto=format&fit=crop&w=1200&q=80',
-                'https://images.unsplash.com/photo-1541167760496-162955ed8a9f?auto=format&fit=crop&w=1200&q=80',
-                'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1200&q=80'
-            ]
-        };
-    });
+    const [storeSettings, setStoreSettings] = useState(() => getLocalData('storeSettings', {
+        manual_status: 'auto',
+        open_time: '10:00',
+        close_time: '01:00',
+        store_name: '',
+        address: 'Poblacion, El Nido, Palawan',
+        contact: '09563713967',
+        logo_url: '',
+        banner_images: [
+            'https://images.unsplash.com/photo-1517701604599-bb29b565094d?auto=format&fit=crop&w=1200&q=80',
+            'https://images.unsplash.com/photo-1541167760496-162955ed8a9f?auto=format&fit=crop&w=1200&q=80',
+            'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1200&q=80'
+        ]
+    }));
 
     // --- FETCH DATA FROM SUPABASE ---
     useEffect(() => {
@@ -106,27 +76,27 @@ const AdminDashboard = () => {
             try {
                 const { data: catData, error: catError } = await supabase.from('categories').select('*').order('sort_order', { ascending: true });
                 if (catError) throw catError;
-                if (catData) setCategories(catData);
+                if (catData) { setCategories(catData); setLocalData('categories', catData); }
 
                 const { data: itemData, error: itemError } = await supabase.from('menu_items').select('*').order('sort_order', { ascending: true });
                 if (itemError) throw itemError;
-                if (itemData) setItems(itemData);
+                if (itemData) { setItems(itemData); setLocalData('menuItems', itemData); }
 
                 const { data: payData, error: payError } = await supabase.from('payment_settings').select('*');
                 if (payError) throw payError;
-                if (payData) setPaymentSettings(payData);
+                if (payData) { setPaymentSettings(payData); setLocalData('paymentSettings', payData); }
 
                 const { data: typeData, error: typeError } = await supabase.from('order_types').select('*');
                 if (typeError) throw typeError;
-                if (typeData) setOrderTypes(typeData);
+                if (typeData) { setOrderTypes(typeData); setLocalData('orderTypes', typeData); }
 
                 const { data: storeData, error: storeError } = await supabase.from('store_settings').select('*').limit(1).single();
                 if (storeError && storeError.code !== 'PGRST116') throw storeError; // Ignore if no settings record yet
-                if (storeData) setStoreSettings(storeData);
+                if (storeData) { setStoreSettings(storeData); setLocalData('storeSettings', storeData); }
 
                 const { data: orderData, error: orderError } = await supabase.from('orders').select('*').order('timestamp', { ascending: false });
                 if (orderError) throw orderError;
-                if (orderData) setOrders(orderData);
+                if (orderData) { setOrders(orderData); setLocalData('orders', orderData.slice(0, 50)); }
             } catch (err) {
                 console.error('Error fetching admin data:', err);
                 showMessage(`Error loading data: ${err.message || 'Unknown error'}`);
@@ -165,14 +135,14 @@ const AdminDashboard = () => {
         if (file) {
             const reader = new FileReader();
             reader.onloadend = async () => {
-                const qr_url = reader.result;
-                const { error } = await supabase.from('payment_settings').update({ qr_url }).eq('id', methodId);
+                const compressed = await compressImage(reader.result, 800, 0.7);
+                const { error } = await supabase.from('payment_settings').update({ qr_url: compressed }).eq('id', methodId);
                 if (error) {
                     console.error(error);
                     showMessage(`Error saving QR code: ${error.message}`);
                     return;
                 }
-                setPaymentSettings(prev => prev.map(m => m.id === methodId ? { ...m, qr_url } : m));
+                setPaymentSettings(prev => prev.map(m => m.id === methodId ? { ...m, qr_url: compressed } : m));
                 showMessage('QR code updated!');
             };
             reader.readAsDataURL(file);
@@ -407,7 +377,10 @@ const AdminDashboard = () => {
                                     const file = e.target.files[0];
                                     if (file) {
                                         const reader = new FileReader();
-                                        reader.onloadend = () => setEditingItem({ ...editingItem, image: reader.result });
+                                        reader.onloadend = async () => {
+                                            const compressed = await compressImage(reader.result, 800, 0.7);
+                                            setEditingItem({ ...editingItem, image: compressed });
+                                        };
                                         reader.readAsDataURL(file);
                                     }
                                 }} style={{ ...inputStyle, flex: 1 }} />
@@ -756,7 +729,10 @@ const AdminDashboard = () => {
                                     const file = e.target.files[0];
                                     if (file) {
                                         const reader = new FileReader();
-                                        reader.onloadend = () => setTempQR(reader.result);
+                                        reader.onloadend = async () => {
+                                            const compressed = await compressImage(reader.result, 800, 0.7);
+                                            setTempQR(compressed);
+                                        };
                                         reader.readAsDataURL(file);
                                     }
                                 }} style={inputStyle} />
@@ -1188,13 +1164,13 @@ const StoreGeneralSettings = ({ storeSettings, setStoreSettings, showMessage, co
         if (file) {
             const reader = new FileReader();
             reader.onloadend = async () => {
-                const logo_url = reader.result;
+                const compressed = await compressImage(reader.result, 600, 0.7);
                 let error;
                 if (storeSettings.id) {
-                    const res = await supabase.from('store_settings').update({ logo_url }).eq('id', storeSettings.id);
+                    const res = await supabase.from('store_settings').update({ logo_url: compressed }).eq('id', storeSettings.id);
                     error = res.error;
                 } else {
-                    const res = await supabase.from('store_settings').upsert({ logo_url }).select().single();
+                    const res = await supabase.from('store_settings').upsert({ logo_url: compressed }).select().single();
                     error = res.error;
                     if (res.data) setStoreSettings(res.data);
                 }
@@ -1203,7 +1179,7 @@ const StoreGeneralSettings = ({ storeSettings, setStoreSettings, showMessage, co
                     showMessage(`Error saving logo: ${error.message}`);
                     return;
                 }
-                if (storeSettings.id) setStoreSettings({ ...storeSettings, logo_url });
+                if (storeSettings.id) setStoreSettings({ ...storeSettings, logo_url: compressed });
                 showMessage('Logo updated!');
             };
             reader.readAsDataURL(file);
