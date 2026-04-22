@@ -3,6 +3,8 @@
  * If quota is exceeded, it attempts to clear non-essential caches.
  */
 export const setLocalData = (key, data) => {
+    const APP_KEYS = ['categories', 'menuItems', 'orders', 'paymentSettings', 'orderTypes', 'storeSettings'];
+    
     try {
         const serializedData = JSON.stringify(data);
         localStorage.setItem(key, serializedData);
@@ -10,49 +12,51 @@ export const setLocalData = (key, data) => {
         if (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014) {
             console.warn(`LocalStorage quota exceeded while saving ${key}. Attempting to clear space...`);
             
-            // Priority for clearing:
-            // 1. Old orders (often the largest growing data)
-            // 2. Menu items cache (can be re-fetched)
-            
-            if (key !== 'orders') {
-                localStorage.removeItem('orders');
-            }
+            // Strategy 1: Clear all other known app caches to make maximum room for this one
+            APP_KEYS.forEach(k => {
+                if (k !== key) localStorage.removeItem(k);
+            });
             
             try {
                 localStorage.setItem(key, JSON.stringify(data));
-                console.log(`Successfully saved ${key} after clearing space.`);
+                console.log(`Successfully saved ${key} after clearing other app caches.`);
+                return;
             } catch (retryError) {
-                // If it still fails, and it's not the menuItems we're trying to save, clear menuItems too
-                if (key !== 'menuItems') {
-                    localStorage.removeItem('menuItems');
-                }
+                // Strategy 2: If it still fails, it means THIS specific key's data is too large (>5MB)
+                // We MUST strip it down or give up.
                 
-                try {
-                    localStorage.setItem(key, JSON.stringify(data));
-                } catch (lastError) {
-                    // FINAL FALLBACK: Strip large Base64 images from common large keys
-                    if (key === 'menuItems' && Array.isArray(data)) {
-                        console.warn('Attempting to save menuItems without images to stay within quota...');
-                        const strippedData = data.map(item => ({ 
-                            ...item, 
-                            image: (item.image && item.image.length > 5000) ? '' : item.image 
-                        }));
-                        try {
-                            localStorage.setItem(key, JSON.stringify(strippedData));
-                            return;
-                        } catch (sErr) {}
-                    }
+                if (key === 'menuItems' && Array.isArray(data)) {
+                    console.warn('Attempting to save minimal menuItems (no images, no descriptions) to stays within quota...');
+                    // Extremely aggressive stripping: keep only name, price, category, and ID
+                    const minimalData = data.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        price: item.price,
+                        promo_price: item.promo_price,
+                        category_id: item.category_id || item.categoryId,
+                        out_of_stock: item.out_of_stock
+                        // NO images, NO descriptions, NO variations/addons in the cache
+                    }));
                     
-                    if (key === 'storeSettings' && data) {
-                        console.warn('Attempting to save storeSettings without banner images to stay within quota...');
-                        const strippedData = { ...data, banner_images: [] };
-                        try {
-                            localStorage.setItem(key, JSON.stringify(strippedData));
-                            return;
-                        } catch (sErr) {}
+                    try {
+                        localStorage.setItem(key, JSON.stringify(minimalData));
+                        console.log('Saved minimal menuItems to localStorage.');
+                        return;
+                    } catch (sErr) {
+                        console.error('Even minimal menuItems exceeded 5MB. Abandoning local cache.');
+                        localStorage.removeItem(key);
                     }
-
-                    console.error(`Failed to save ${key} even after clearing caches. Data may be too large.`, lastError.message);
+                } else if (key === 'storeSettings') {
+                    console.warn('Attempting to save storeSettings without large images...');
+                    const minimalSettings = { ...data, banner_images: [], logo_url: '' };
+                    try {
+                        localStorage.setItem(key, JSON.stringify(minimalSettings));
+                        return;
+                    } catch (sErr) {
+                        localStorage.removeItem(key);
+                    }
+                } else {
+                    console.error(`Failed to save ${key} even after clearing caches. Data is simply too large.`, retryError.message);
                 }
             }
         } else {
